@@ -1,0 +1,93 @@
+services:
+  teslamate:
+    container_name: 'teslamate'
+    image: teslamate/teslamate:latest
+    restart: always
+    environment:
+      - ENCRYPTION_KEY=${TM_ENCRYPTION_KEY}
+      - DATABASE_USER=${TM_DB_USER}
+      - DATABASE_PASS=${TM_DB_PASS}
+      - DATABASE_NAME=${TM_DB_NAME}
+      - DATABASE_HOST=teslamate-database
+      - MQTT_HOST=mosquitto
+      - VIRTUAL_HOST=${FQDN_TM}
+      - CHECK_ORIGIN=true
+      - TZ=${TM_TZ}
+#    ports:
+#      - 4000:4000
+    volumes:
+      - ./import:/opt/app/import
+    cap_drop:
+      - all
+    env_file:
+      - 'stack.env'
+    networks:
+      teslamate-net:
+      nginx-proxy-network:
+#        ipv4_address: 172.18.0.25
+
+  database:
+    image: postgres:17
+    container_name: 'teslamate-database'
+    restart: always
+    environment:
+      - POSTGRES_USER=${TM_DB_USER}
+      - POSTGRES_PASSWORD=${TM_DB_PASS}
+      - POSTGRES_DB=${TM_DB_NAME}
+    volumes:
+      - teslamate-db:/var/lib/postgresql/data
+    env_file:
+      - 'stack.env'
+    networks:
+      - teslamate-net
+
+  grafana:
+    image: teslamate/grafana:latest
+    container_name: 'teslamate-grafana'
+    restart: always
+    environment:
+      - DATABASE_USER=${TM_DB_USER}
+      - DATABASE_PASS=${TM_DB_PASS}
+      - DATABASE_NAME=${TM_DB_NAME}
+      - DATABASE_HOST=teslamate-database
+      - GRAFANA_PASSWD=${GRAFANA_PW}
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PW}
+      - GF_AUTH_BASIC_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_SERVER_ROOT_URL=https://${FQDN_GRAFANA}
+#    ports:
+#      - 3000:3000
+    volumes:
+      - teslamate-grafana-data:/var/lib/grafana
+    env_file:
+      - 'stack.env'
+    networks:
+      teslamate-net:
+      nginx-proxy-network:
+#        ipv4_address: 172.18.0.26
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: 'teslamate-mosquitto'
+    restart: always
+    command: mosquitto -c /mosquitto-no-auth.conf
+#     ports:
+#       - 1883:1883
+    volumes:
+      - mosquitto-conf:/mosquitto/config
+      - mosquitto-data:/mosquitto/data
+    networks:
+      - teslamate-net
+
+networks:
+  nginx-proxy-network:
+    external: true
+  teslamate-net:
+    driver: bridge
+
+volumes:
+  teslamate-db:
+  teslamate-grafana-data:
+  mosquitto-conf:
+  mosquitto-data:
