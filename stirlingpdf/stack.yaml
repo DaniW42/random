@@ -1,0 +1,38 @@
+services:
+  stirling-pdf:
+    container_name: stirlingpdf
+    image: stirlingtools/stirling-pdf:latest
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/info/status | grep -q 'UP' && curl -fL http://localhost:8080/ | grep -qv 'Please sign in'"]
+      interval: 5s
+      timeout: 10s
+      retries: 16
+#    ports:
+#      - "8080:8080"
+    volumes:
+      - stirlingpdf_data:/usr/share/tessdata:rw
+      - stirlingpdf_config:/configs:rw
+      - stirlingpdf_logs:/logs:rw
+      - stirlingpdf_customFiles:/customFiles/:rw
+      - stirlingpdf_pipeline:/pipeline/:rw
+    env_file:
+      - stack.env
+    restart: on-failure:5
+    networks:
+      nginx-proxy-network:
+        ipv4_address: 172.18.0.7
+
+ volumes:
+  stirlingpdf_data:
+  stirlingpdf_config:
+  stirlingpdf_logs:
+  stirlingpdf_customFiles:
+  stirlingpdf_pipeline:
+
+networks:
+  nginx-proxy-network:
+    external: true
