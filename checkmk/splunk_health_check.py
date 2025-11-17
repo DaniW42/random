@@ -91,12 +91,10 @@ def main():
     latest_block, timestamp, error = get_latest_log_block(SPLUNK_HEALTH_LOG)
 
     if error:
-        # Use quoted service name as requested
         print(f"3 \"Splunk Health\" - UNKNOWN: {error}")
         return
 
     if not latest_block:
-        # Use quoted service name as requested
         print("3 \"Splunk Health\" - UNKNOWN: Could not find a valid health report block in the log.")
         return
 
@@ -109,7 +107,6 @@ def main():
             entries_with_raw.append((attributes, raw_attribute_string))
 
     if not entries_with_raw:
-        # Use quoted service name as requested
         print("3 \"Splunk Health\" - UNKNOWN: No attributes parsed from the latest report.")
         return
 
